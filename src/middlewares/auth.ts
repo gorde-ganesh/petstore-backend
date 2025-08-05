@@ -61,7 +61,6 @@ export const verifyToken = async (
 
 export const verifyPermission = (allowedRoles: any[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    console.log(req);
     const user = (req as any).user;
 
     if (!user || !allowedRoles.includes(user.role)) {

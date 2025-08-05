@@ -7,8 +7,3 @@ export interface User {
   updatedAt: Date;
   pets: any[];
 }
-
-export const ROLES = {
-  ADMIN: 'ADMIN',
-  USER: 'USER',
-};

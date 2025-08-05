@@ -2,8 +2,6 @@ import { PrismaClient, User } from '../../generated/prisma/client';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../models/global.model';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
-import { ROLES } from '../models/users.model';
 
 const prisma = new PrismaClient();
 
