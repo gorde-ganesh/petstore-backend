@@ -2,6 +2,8 @@ import { PrismaClient, User } from '../../generated/prisma/client';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../models/global.model';
 import bcrypt from 'bcrypt';
+import uuid from 'uuid';
+import { ROLES } from '../models/users.model';
 
 const prisma = new PrismaClient();
 
@@ -11,10 +13,12 @@ interface LoginRequestBody {
 
 export const getUsers = async (
   req: Request<{}, {}, LoginRequestBody>,
-  res: Response<ApiResponse<User[]>>
+  res: Response<ApiResponse<Omit<User[], 'password'>>>
 ) => {
   try {
     const users = await prisma.user.findMany();
+    // Omit password
+
     if (users.length > 0)
       res.status(200).json({
         statusCode: 200,
@@ -48,13 +52,25 @@ export const createUser = async (
   res: Response<ApiResponse<User>>
 ) => {
   try {
-    const { id, name, email, password, createdAt, updatedAt } = req.body;
+    const { name, email, password, createdAt, updatedAt, role } = req.body;
     const encryptedPassword = await bcrypt.hash(password, 10);
+
+    if (role !== ROLES.ADMIN || role !== ROLES.USER) {
+      res.status(500).json({
+        statusCode: 500,
+        data: null,
+        error: null,
+        success: false,
+        message: 'Provide valid role',
+      });
+    }
+
     const newUser = await prisma.user.create({
       data: {
-        id,
+        id: uuid.v4(),
         name,
         email,
+        role,
         password: encryptedPassword,
         createdAt,
         updatedAt,
@@ -84,17 +100,7 @@ export const updateUser = async (
   res: Response<ApiResponse<User>>
 ) => {
   try {
-    const userId = parseInt(req.params.id, 10);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        statusCode: 400,
-        data: null,
-        error: 'Invalid user ID',
-        success: false,
-        message: 'User ID must be a number',
-      });
-    }
+    const userId = req.params.id;
 
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -148,20 +154,21 @@ export const deleteUser = async (
   res: Response<ApiResponse<null>>
 ) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
 
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        statusCode: 400,
-        data: null,
-        error: 'Invalid user ID',
-        success: false,
-        message: 'User ID must be a number',
-      });
-    }
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
     });
+
+    if (!existingUser) {
+      res.status(500).json({
+        statusCode: 500,
+        data: null,
+        error: null,
+        success: false,
+        message: 'User not found',
+      });
+    }
 
     const deleteUser = await prisma.user.delete({
       where: { id: userId },

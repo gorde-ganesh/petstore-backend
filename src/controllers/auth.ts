@@ -28,7 +28,6 @@ export const loginUser = async (
   res: Response<ApiResponse<LoginResponse>>
 ) => {
   try {
-    console.log(req.body, 'login request>>>>>>>>>>');
     const { username, password } = req.body;
 
     // Validate input
