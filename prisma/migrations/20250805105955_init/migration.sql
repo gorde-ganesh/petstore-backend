@@ -1,9 +1,10 @@
 -- CreateTable
 CREATE TABLE "public"."users" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
     "password" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -12,10 +13,10 @@ CREATE TABLE "public"."users" (
 
 -- CreateTable
 CREATE TABLE "public"."pets" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "breed" TEXT NOT NULL,
-    "userId" INTEGER,
+    "userId" TEXT,
 
     CONSTRAINT "pets_pkey" PRIMARY KEY ("id")
 );

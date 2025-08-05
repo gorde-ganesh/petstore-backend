@@ -2,7 +2,7 @@ import { PrismaClient, User } from '../../generated/prisma/client';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../models/global.model';
 import bcrypt from 'bcrypt';
-import uuid from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { ROLES } from '../models/users.model';
 
 const prisma = new PrismaClient();
@@ -13,28 +13,18 @@ interface LoginRequestBody {
 
 export const getUsers = async (
   req: Request<{}, {}, LoginRequestBody>,
-  res: Response<ApiResponse<Omit<User[], 'password'>>>
+  res: Response<ApiResponse<Omit<User, 'password'>[]>>
 ) => {
   try {
     const users = await prisma.user.findMany();
-    // Omit password
-
-    if (users.length > 0)
-      res.status(200).json({
-        statusCode: 200,
-        success: true,
-        data: users,
-        error: null,
-        message: 'Users found',
-      });
-    else
-      res.status(200).json({
-        statusCode: 200,
-        success: true,
-        data: users,
-        error: null,
-        message: 'Users not found',
-      });
+    const usersWithoutPassword = users.map(({ password, ...user }) => user);
+    res.status(200).json({
+      statusCode: 200,
+      success: true,
+      data: usersWithoutPassword,
+      error: null,
+      message: users.length > 0 ? 'Users found' : 'Users not found',
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({
@@ -52,28 +42,41 @@ export const createUser = async (
   res: Response<ApiResponse<User>>
 ) => {
   try {
-    const { name, email, password, createdAt, updatedAt, role } = req.body;
+    const { name, email, password, role } = req.body;
     const encryptedPassword = await bcrypt.hash(password, 10);
 
-    if (role !== ROLES.ADMIN || role !== ROLES.USER) {
-      res.status(500).json({
-        statusCode: 500,
+    if (!['ADMIN', 'USER'].includes(role)) {
+      return res.status(400).json({
+        statusCode: 400,
         data: null,
         error: null,
         success: false,
-        message: 'Provide valid role',
+        message: 'Provide a valid role (ADMIN or USER)',
+      });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        statusCode: 400,
+        data: null,
+        error: null,
+        success: false,
+        message: 'User already exists',
       });
     }
 
     const newUser = await prisma.user.create({
       data: {
-        id: uuid.v4(),
         name,
         email,
         role,
         password: encryptedPassword,
-        createdAt,
-        updatedAt,
       },
     });
 
@@ -85,6 +88,7 @@ export const createUser = async (
       message: 'User created successfully',
     });
   } catch (err: any) {
+    console.log(err, '>>>>error');
     res.status(500).json({
       statusCode: 500,
       data: null,

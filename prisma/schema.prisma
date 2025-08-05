@@ -15,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id      String      @id
+  id      String   @id @default(uuid())
   email   String   @unique
   name    String?
   password String
@@ -29,7 +29,7 @@ model User {
 
 
 model Pet {
-  id String @id
+  id String  @id @default(uuid())
   name String
   breed String
   user User? @relation(fields: [userId], references: [id])
